@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>キャンペーンガチャ — Campaign Gacha</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --orange:#F48120;--orange-dark:#E5720F;--orange-light:#FF9A3C;
+  --blue:#3B82F6;--green:#22C55E;--purple:#A855F7;--red:#EF4444;--yellow:#F59E0B;
+  --text-primary:#18181B;--text-secondary:#71717A;--text-muted:#A1A1AA;
+  --bg-card:#FFFFFF;--border:#E4E4E7;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Noto Sans JP','Inter',sans-serif;
+  background:linear-gradient(180deg,#FFFFFF 0%,#FEF0E8 50%,#FDDCBF 100%);
+  min-height:100vh;color:var(--text-primary);
+  display:flex;flex-direction:column;align-items:center;
+  padding:0 16px 60px;
+}
+
+/* === Header === */
+.header{text-align:center;padding:48px 0 8px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.header h1{font-family:'Noto Sans JP',sans-serif;font-size:clamp(36px,7vw,56px);font-weight:900;color:var(--text-primary);letter-spacing:-1px}
+.header .subtitle{font-family:'Inter',sans-serif;font-size:16px;font-weight:600;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase}
+.header .tagline{font-size:15px;font-weight:400;color:var(--text-secondary);margin-top:4px}
+
+/* === Gacha Machine === */
+.gacha-machine{position:relative;width:400px;height:480px;margin:20px auto 0;max-width:100%}
+.glass-dome{
+  position:absolute;top:0;left:50px;width:300px;height:280px;
+  border-radius:150px 150px 24px 24px;
+  background:linear-gradient(180deg,#E8F4FE 0%,#F0F7FF 50%,#FFFFFF 100%);
+  border:3px solid #D4D4D8;overflow:hidden;
+}
+.dome-shine{
+  position:absolute;top:30px;left:50px;width:80px;height:120px;
+  border-radius:50%;background:rgba(255,255,255,0.4);pointer-events:none;
+}
+.capsule{position:absolute;border-radius:50%;transition:transform 0.3s ease}
+.capsule:nth-child(1){top:80px;left:70px;width:52px;height:44px;background:var(--orange);box-shadow:0 2px 6px #F4812040;animation:float1 3s ease-in-out infinite}
+.capsule:nth-child(2){top:60px;left:150px;width:48px;height:40px;background:var(--blue);box-shadow:0 2px 6px #3B82F640;animation:float2 3.5s ease-in-out infinite}
+.capsule:nth-child(3){top:140px;left:120px;width:50px;height:42px;background:var(--green);box-shadow:0 2px 6px #22C55E40;animation:float3 2.8s ease-in-out infinite}
+.capsule:nth-child(4){top:110px;left:210px;width:46px;height:38px;background:var(--purple);box-shadow:0 2px 6px #A855F740;animation:float1 3.2s ease-in-out infinite 0.5s}
+.capsule:nth-child(5){top:170px;left:50px;width:44px;height:36px;background:var(--red);box-shadow:0 2px 6px #EF444440;animation:float2 2.6s ease-in-out infinite 0.3s}
+.capsule:nth-child(6){top:180px;left:180px;width:50px;height:42px;background:var(--yellow);box-shadow:0 2px 6px #F59E0B40;animation:float3 3.1s ease-in-out infinite 0.7s}
+
+@keyframes float1{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes float2{0%,100%{transform:translateY(0) translateX(0)}50%{transform:translateY(-6px) translateX(4px)}}
+@keyframes float3{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px) translateX(-3px)}}
+
+.machine-base{
+  position:absolute;top:270px;left:30px;width:340px;height:120px;
+  border-radius:0 0 24px 24px;
+  background:linear-gradient(180deg,var(--orange),var(--orange-dark));
+}
+.capsule-slot{
+  position:absolute;top:280px;left:50%;transform:translateX(-50%);
+  width:100px;height:50px;border-radius:0 0 24px 24px;
+  background:#D4650A;border:2px solid #C45A08;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,0.5);font-weight:700;font-size:18px;letter-spacing:4px;
+}
+.spin-btn{
+  position:absolute;top:400px;left:50%;transform:translateX(-50%);
+  width:260px;height:68px;border-radius:34px;border:none;cursor:pointer;
+  background:linear-gradient(180deg,#FF6B35,var(--orange),var(--orange-light));
+  box-shadow:0 6px 24px #F4812060;
+  font-family:'Noto Sans JP',sans-serif;font-size:24px;font-weight:800;color:#FFF;
+  transition:transform 0.15s,box-shadow 0.15s;letter-spacing:1px;
+}
+.spin-btn:hover{transform:translateX(-50%) translateY(-2px);box-shadow:0 8px 32px #F4812080}
+.spin-btn:active{transform:translateX(-50%) translateY(1px);box-shadow:0 3px 12px #F4812040}
+
+/* === Shake animation === */
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  10%{transform:translateX(-8px) rotate(-2deg)}
+  20%{transform:translateX(8px) rotate(2deg)}
+  30%{transform:translateX(-6px) rotate(-1deg)}
+  40%{transform:translateX(6px) rotate(1deg)}
+  50%{transform:translateX(-4px)}
+  60%{transform:translateX(4px)}
+  70%{transform:translateX(-2px)}
+  80%{transform:translateX(2px)}
+}
+.gacha-machine.shaking{animation:shake 0.6s ease-in-out}
+@keyframes capsuleBounce{
+  0%{transform:translateY(0)}25%{transform:translateY(-20px)}
+  50%{transform:translateY(0)}75%{transform:translateY(-10px)}100%{transform:translateY(0)}
+}
+.gacha-machine.shaking .capsule{animation:capsuleBounce 0.6s ease-in-out !important}
+@keyframes dropCapsule{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  50%{opacity:1;transform:translateY(60px) scale(0.8)}
+  100%{opacity:0;transform:translateY(120px) scale(0.5)}
+}
+.dropping-capsule{
+  position:absolute;width:50px;height:42px;border-radius:50%;
+  top:240px;left:50%;margin-left:-25px;z-index:10;
+  animation:dropCapsule 0.5s ease-in forwards;
+}
+
+/* === Sections === */
+.section{width:100%;max-width:800px;margin-top:40px;opacity:0;transform:translateY(30px);transition:opacity 0.6s ease,transform 0.6s ease}
+.section.visible{opacity:1;transform:translateY(0)}
+.section-label{font-family:'Noto Sans JP',sans-serif;font-size:26px;font-weight:800;color:var(--orange);text-align:center;margin-bottom:24px}
+
+/* === Cards === */
+.card{
+  background:var(--bg-card);border-radius:16px;padding:32px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.07);
+  border:2px solid rgba(244,129,32,0.12);
+}
+.card-title{font-size:18px;font-weight:700;margin-bottom:12px}
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+/* === Brief Grid === */
+.brief-grid{display:flex;flex-direction:column;gap:16px}
+.brief-row{display:flex;gap:16px}
+.brief-item{flex:1;padding:16px;border-radius:12px;display:flex;flex-direction:column;gap:6px}
+.brief-item .label{font-size:12px;font-weight:600;color:var(--text-secondary)}
+.brief-item .value{font-size:20px;font-weight:700;color:var(--text-primary)}
+.brief-item:nth-child(1){background:#FFF7ED}
+.brief-item:nth-child(2){background:#EFF6FF}
+.brief-item:nth-child(3){background:#F0FDF4}
+.brief-row:nth-child(2) .brief-item:nth-child(1){background:#FAF5FF}
+.brief-row:nth-child(2) .brief-item:nth-child(2){background:#FFF1F2}
+
+/* === Pitch === */
+.campaign-name{text-align:center;margin-bottom:8px}
+.campaign-name .label{font-size:11px;font-weight:700;color:var(--orange);letter-spacing:3px}
+.campaign-name h2{font-size:clamp(22px,4vw,30px);font-weight:900;margin-top:8px;letter-spacing:-0.5px}
+
+/* === Channel Mix === */
+.section-subtitle{font-size:11px;font-weight:700;color:var(--text-secondary);letter-spacing:3px;margin-bottom:12px}
+.stacked-bar{display:flex;height:48px;border-radius:12px;overflow:hidden}
+.bar-segment{display:flex;align-items:center;justify-content:center;color:#FFF;font-size:12px;font-weight:600;transition:width 0.8s ease;white-space:nowrap}
+.bar-retarget{background:var(--orange)}
+.bar-acquire{background:var(--blue)}
+.bar-retention{background:var(--green)}
+.bar-offsite{background:var(--purple)}
+
+/* === Banner === */
+.banner-section{text-align:center}
+.mock-banner{
+  width:300px;height:250px;border-radius:16px;margin:12px auto 0;
+  background:linear-gradient(135deg,var(--orange),#FF6B35,#FFB347);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  padding:24px;box-shadow:0 8px 24px #F4812030;
+}
+.banner-logo{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center}
+.banner-logo span{font-family:'Inter',sans-serif;font-size:20px;font-weight:800;color:#FFF}
+.banner-ai-label{font-size:14px;font-weight:600;color:rgba(255,255,255,0.8)}
+.banner-cta{background:#FFF;border-radius:22px;padding:10px 24px;font-size:14px;font-weight:700;color:var(--orange)}
+
+/* === Metrics === */
+.metrics-row{display:flex;gap:16px}
+.metric-card{
+  flex:1;padding:20px;border-radius:12px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.metric-card:nth-child(1){background:#FFF7ED}
+.metric-card:nth-child(2){background:#EFF6FF}
+.metric-card:nth-child(3){background:#F0FDF4}
+.metric-card .emoji{font-size:28px}
+.metric-card .label{font-size:12px;font-weight:600;color:var(--text-secondary)}
+.metric-card .value{font-family:'Inter',sans-serif;font-size:36px;font-weight:800}
+.metric-card:nth-child(1) .value{color:var(--orange)}
+.metric-card:nth-child(2) .value{color:var(--blue)}
+.metric-card:nth-child(3) .value{color:var(--green)}
+
+/* === AI Insight === */
+.ai-insight{
+  display:flex;align-items:flex-start;gap:14px;padding:20px;border-radius:12px;
+  background:linear-gradient(90deg,#FFF7ED,#FFFBF5);
+  border:1px solid rgba(244,129,32,0.18);
+}
+.ai-insight .icon{font-size:24px;flex-shrink:0;margin-top:2px}
+.ai-insight .label{font-size:10px;font-weight:700;color:var(--orange);letter-spacing:3px}
+.ai-insight .text{font-size:14px;font-weight:500;color:#52525B;line-height:1.7;margin-top:4px}
+
+/* === Footer === */
+.footer{width:100%;max-width:800px;margin-top:40px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.footer-btns{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+.btn-primary{
+  border:none;cursor:pointer;height:56px;border-radius:28px;padding:0 36px;
+  background:linear-gradient(180deg,#FF6B35,var(--orange));
+  box-shadow:0 4px 16px #F4812040;
+  font-family:'Noto Sans JP',sans-serif;font-size:18px;font-weight:700;color:#FFF;
+  transition:transform 0.15s,box-shadow 0.15s;display:flex;align-items:center;gap:8px;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px #F4812060}
+.btn-secondary{
+  border:2px solid #D4D4D8;cursor:pointer;height:56px;border-radius:28px;padding:0 36px;
+  background:#FFF;box-shadow:0 2px 8px rgba(0,0,0,0.03);
+  font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:600;color:#52525B;
+  transition:transform 0.15s,border-color 0.15s;display:flex;align-items:center;gap:8px;
+}
+.btn-secondary:hover{transform:translateY(-1px);border-color:var(--orange)}
+.credit{font-size:13px;font-weight:500;color:var(--text-muted)}
+
+/* === Confetti === */
+@keyframes confettiFall{
+  0%{transform:translateY(-10px) rotate(0deg);opacity:1}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0}
+}
+.confetti-piece{
+  position:fixed;top:-10px;width:10px;height:10px;z-index:1000;
+  animation:confettiFall 3s ease-in forwards;pointer-events:none;
+}
+
+/* === Responsive === */
+@media(max-width:600px){
+  .brief-row{flex-direction:column}
+  .metrics-row{flex-direction:column}
+  .gacha-machine{transform:scale(0.8);transform-origin:top center;height:384px}
+  .mock-banner{width:260px;height:220px}
+  .card{padding:20px}
+  .metric-card .value{font-size:28px}
+  .btn-primary,.btn-secondary{width:100%;justify-content:center}
+}
+
+.results-container{display:none}
+.results-container.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="header">
+  <h1>キャンペーンガチャ</h1>
+  <div class="subtitle">Campaign Gacha</div>
+  <div class="tagline">ボタンを押して、AIがキャンペーンを自動生成！</div>
+</div>
+
+<!-- ガチャマシン -->
+<div class="gacha-machine" id="gachaMachine">
+  <div class="glass-dome">
+    <div class="dome-shine"></div>
+    <div class="capsule"></div>
+    <div class="capsule"></div>
+    <div class="capsule"></div>
+    <div class="capsule"></div>
+    <div class="capsule"></div>
+    <div class="capsule"></div>
+  </div>
+  <div class="machine-base"></div>
+  <div class="capsule-slot">▼▼▼</div>
+  <button class="spin-btn" id="spinBtn" onclick="spin()">ガチャを回す！</button>
+</div>
+
+<!-- 結果 -->
+<div class="results-container" id="results">
+
+  <!-- カプセル開封 -->
+  <div class="section" id="revealSection">
+    <div class="section-label">🎊 カプセルオープン！</div>
+    <div class="card">
+      <div class="card-title">ランダムブリーフ</div>
+      <div class="divider"></div>
+      <div class="brief-grid">
+        <div class="brief-row">
+          <div class="brief-item"><span class="label">🏪 クライアント</span><span class="value" id="clientVal"></span></div>
+          <div class="brief-item"><span class="label">🏷️ 業種</span><span class="value" id="industryVal"></span></div>
+          <div class="brief-item"><span class="label">💰 予算</span><span class="value" id="budgetVal"></span></div>
+        </div>
+        <div class="brief-row">
+          <div class="brief-item"><span class="label">🎯 目標KPI</span><span class="value" id="kpiVal"></span></div>
+          <div class="brief-item"><span class="label">📅 実施期間</span><span class="value" id="periodVal"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- キャンペーン提案 -->
+  <div class="section" id="pitchSection">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:32px;margin-bottom:8px">🤖</div>
+      <div style="font-size:26px;font-weight:800">AI生成キャンペーン提案</div>
+    </div>
+    <div class="card">
+      <!-- キャンペーン名 -->
+      <div class="campaign-name">
+        <div class="label">キャンペーン名</div>
+        <h2 id="campaignName"></h2>
+      </div>
+      <div class="divider"></div>
+
+      <!-- チャネルミックス -->
+      <div>
+        <div class="section-subtitle">チャネルミックス</div>
+        <div class="stacked-bar" id="channelBar">
+          <div class="bar-segment bar-retarget" id="barRetarget"><span></span></div>
+          <div class="bar-segment bar-acquire" id="barAcquire"><span></span></div>
+          <div class="bar-segment bar-retention" id="barRetention"><span></span></div>
+          <div class="bar-segment bar-offsite" id="barOffsite"><span></span></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <!-- バナープレビュー -->
+      <div class="banner-section">
+        <div class="section-subtitle">バナープレビュー</div>
+        <div class="mock-banner">
+          <div class="banner-logo"><span id="bannerLogoText"></span></div>
+          <div class="banner-ai-label">AI生成バナー</div>
+          <div class="banner-cta">今すぐチェック →</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <!-- 予測パフォーマンス -->
+      <div>
+        <div class="section-subtitle">予測パフォーマンス</div>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="emoji">📈</div>
+            <div class="label">予想ROAS</div>
+            <div class="value" id="roasVal"></div>
+          </div>
+          <div class="metric-card">
+            <div class="emoji">👆</div>
+            <div class="label">推定クリック数</div>
+            <div class="value" id="clicksVal"></div>
+          </div>
+          <div class="metric-card">
+            <div class="emoji">💰</div>
+            <div class="label">推定売上</div>
+            <div class="value" id="revenueVal"></div>
+          </div>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <!-- AIインサイト -->
+      <div class="ai-insight">
+        <div class="icon">💡</div>
+        <div>
+          <div class="label">AIインサイト</div>
+          <div class="text" id="insightText"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- フッター -->
+<div class="footer" id="footer" style="display:none">
+  <div class="footer-btns">
+    <button class="btn-primary" onclick="spin()">もう一回！🎰</button>
+    <button class="btn-secondary" onclick="exportProposal()">提案書を作成する 📄</button>
+  </div>
+  <div class="credit">AIツールで30分で構築 — ハッカソン 2026 🚀</div>
+</div>
+
+<script>
+const DATA = {
+  clients: [
+    { name: 'GDO', industry: 'Eコマース / 小売', logo: 'GDO' },
+    { name: '楽天市場', industry: 'Eコマース', logo: '楽天' },
+    { name: 'ウエルシア', industry: 'ドラッグストア', logo: 'W' },
+    { name: 'モノタロウ', industry: 'B2B通販', logo: 'M' },
+    { name: 'Qoo10', industry: 'マーケットプレイス', logo: 'Q10' },
+    { name: 'メルカリ', industry: 'マーケットプレイス', logo: 'Me' },
+    { name: 'SUUMO', industry: '不動産', logo: 'S' },
+    { name: '求人ボックス', industry: '求人検索', logo: 'KB' }
+  ],
+  budgets: [
+    { label: '50万円', value: 500000 },
+    { label: '100万円', value: 1000000 },
+    { label: '300万円', value: 3000000 },
+    { label: '500万円', value: 5000000 },
+    { label: '1,000万円', value: 10000000 }
+  ],
+  kpis: ['ROAS 400%', 'CPA ¥2,000', 'CTR 1.5%', '新規CPA ¥3,000'],
+  periods: ['2026年 第2四半期', '2026年 サマーセール', '2026年 ブラックフライデー', '2027年 新年'],
+  channelMixes: {
+    'ROAS 400%':       { retarget: 45, acquire: 25, retention: 20, offsite: 10 },
+    'CPA ¥2,000':      { retarget: 35, acquire: 35, retention: 15, offsite: 15 },
+    'CTR 1.5%':        { retarget: 30, acquire: 30, retention: 20, offsite: 20 },
+    '新規CPA ¥3,000':  { retarget: 20, acquire: 45, retention: 15, offsite: 20 }
+  },
+  campaignNames: {
+    '2026年 第2四半期':      ['春の攻めキャンペーン', 'フレッシュスタート', '新シーズン大作戦'],
+    '2026年 サマーセール':    ['サマー・ティーオフ', '灼熱セールウェーブ', 'サン&セーブ'],
+    '2026年 ブラックフライデー':['BFメガラッシュ', 'ディールフィーバー', 'フラッシュボナンザ'],
+    '2027年 新年':           ['新年ダッシュ', 'フレッシュ2027', 'ラッキースタート']
+  },
+  insights: {
+    GDO:       'GDOユーザーは週末にコンバージョン率が42%高い。土日に予算を集中させましょう！🏌️',
+    '楽天市場': '楽天ポイント5倍デーに合わせた配信で、ROASが平均1.8倍に。カレンダー連動が鍵！🛒',
+    'ウエルシア':'ドラッグストアユーザーは朝7〜9時の閲覧率が高い。通勤時間帯にリーチを最大化！💊',
+    'モノタロウ':'B2Bユーザーは月曜午前にまとめ購入する傾向。週初めの入札強化が効果的！🔧',
+    Qoo10:     'メガ割期間中のCTRは通常の3.2倍。セール前のリターゲティング強化がカギ！🎯',
+    'メルカリ': '出品から24時間以内の購入率が65%。新着アイテムへの即時配信で売上UP！📦',
+    SUUMO:     '物件閲覧のピークは日曜夜。週末に予算配分を集中させてリード獲得を最大化！🏠',
+    '求人ボックス':'求職者の応募ピークは月曜日の朝。週明けの配信強化でCPA改善が見込めます！💼'
+  }
+};
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randBetween(min, max) { return Math.random() * (max - min) + min; }
+
+function formatYen(n) {
+  if (n >= 100000000) return (n / 100000000).toFixed(1) + '億円';
+  if (n >= 10000) return Math.round(n / 10000) + '万円';
+  return n.toLocaleString() + '円';
+}
+
+let isSpinning = false;
+let currentCampaign = null;
+
+function spin() {
+  if (isSpinning) return;
+  isSpinning = true;
+
+  const machine = document.getElementById('gachaMachine');
+  const results = document.getElementById('results');
+  const footer = document.getElementById('footer');
+
+  results.classList.remove('show');
+  results.style.display = 'none';
+  footer.style.display = 'none';
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.confetti-piece').forEach(c => c.remove());
+
+  machine.classList.add('shaking');
+
+  const colors = ['var(--orange)', 'var(--blue)', 'var(--green)', 'var(--purple)', 'var(--red)', 'var(--yellow)'];
+  const dropCapsule = document.createElement('div');
+  dropCapsule.className = 'dropping-capsule';
+  dropCapsule.style.background = pick(colors);
+  machine.appendChild(dropCapsule);
+
+  setTimeout(() => {
+    machine.classList.remove('shaking');
+    dropCapsule.remove();
+
+    const client = pick(DATA.clients);
+    const budget = pick(DATA.budgets);
+    const kpi = pick(DATA.kpis);
+    const period = pick(DATA.periods);
+    const roas = randBetween(3.2, 6.8);
+    const clicks = Math.round(randBetween(50000, 500000) / 1000) * 1000;
+    const revenue = budget.value * roas;
+    const mix = DATA.channelMixes[kpi];
+    const nameOptions = DATA.campaignNames[period];
+    const campaignName = client.name + ' × ' + pick(nameOptions);
+
+    currentCampaign = {
+      client: client.name, industry: client.industry, logo: client.logo,
+      budgetLabel: budget.label, budgetValue: budget.value,
+      kpi: kpi, period: period, campaignName: campaignName,
+      roas: roas.toFixed(1),
+      clicks: Math.round(clicks / 10000) + '万',
+      revenue: formatYen(Math.round(revenue)),
+      mix: mix,
+      insight: DATA.insights[client.name]
+    };
+
+    document.getElementById('clientVal').textContent = client.name;
+    document.getElementById('industryVal').textContent = client.industry;
+    document.getElementById('budgetVal').textContent = budget.label;
+    document.getElementById('kpiVal').textContent = kpi;
+    document.getElementById('periodVal').textContent = period;
+
+    document.getElementById('campaignName').textContent = campaignName;
+
+    document.getElementById('barRetarget').style.width = mix.retarget + '%';
+    document.getElementById('barRetarget').querySelector('span').textContent = 'リタゲ ' + mix.retarget + '%';
+    document.getElementById('barAcquire').style.width = mix.acquire + '%';
+    document.getElementById('barAcquire').querySelector('span').textContent = '新規獲得 ' + mix.acquire + '%';
+    document.getElementById('barRetention').style.width = mix.retention + '%';
+    document.getElementById('barRetention').querySelector('span').textContent = '継続 ' + mix.retention + '%';
+    document.getElementById('barOffsite').style.width = mix.offsite + '%';
+    document.getElementById('barOffsite').querySelector('span').textContent = mix.offsite + '%';
+
+    document.getElementById('bannerLogoText').textContent = client.logo;
+    document.getElementById('roasVal').textContent = roas.toFixed(1) + 'x';
+    document.getElementById('clicksVal').textContent = Math.round(clicks / 10000) + '万';
+    document.getElementById('revenueVal').textContent = formatYen(Math.round(revenue));
+    document.getElementById('insightText').textContent = DATA.insights[client.name];
+
+    results.style.display = 'block';
+    results.classList.add('show');
+    launchConfetti();
+
+    setTimeout(() => document.getElementById('revealSection').classList.add('visible'), 200);
+    setTimeout(() => document.getElementById('pitchSection').classList.add('visible'), 600);
+    setTimeout(() => { footer.style.display = 'flex'; isSpinning = false; }, 1000);
+  }, 800);
+}
+
+function launchConfetti() {
+  const colors = ['#F48120', '#3B82F6', '#22C55E', '#A855F7', '#EF4444', '#F59E0B', '#FFB347', '#FF6B35'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = pick(colors);
+    piece.style.width = (Math.random() * 8 + 6) + 'px';
+    piece.style.height = (Math.random() * 8 + 6) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+    piece.style.animationDelay = (Math.random() * 0.5) + 's';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 4000);
+  }
+}
+
+function exportProposal() {
+  if (!currentCampaign) return;
+  localStorage.setItem('campaignData', JSON.stringify(currentCampaign));
+  window.location.href = 'proposal.html';
+}
+</script>
+</body>
+</html>
